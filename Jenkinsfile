@@ -25,7 +25,7 @@ pipeline{
         stage('Docker Login'){
             steps{
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]){
-                    bat ' echo %DOCKER_PASSWORD% | "C:\\Users\\sahiljain77\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" login -u %DOCKER_USERNAME% --password-stdin'
+                    bat """ echo %DOCKER_PASSWORD% | "C:\\Users\\sahiljain77\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" login -u %DOCKER_USERNAME% -p %DOCKER_PASSWORD%"""
                 }
             }
         }
