@@ -1,7 +1,7 @@
 pipeline{
     agent any
     environment {
-        IMAGE_NAME = 'connectwithsahiljain/python-devops-demo'
+        IMAGE_NAME = 'connectiwthsahiljain/python-devops-demo'
         IMAGE_TAG = 'v1'
     }
 
