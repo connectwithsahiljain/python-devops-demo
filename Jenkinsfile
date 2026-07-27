@@ -11,7 +11,7 @@ pipeline{
                 checkout scm
             }
         }
-        stage('Docker Images'){
+        stage('Build Docker Images'){
             steps{
                 bat '"C:\\Users\\sahiljain77\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" build -t python-devops-demo:v1 .'
             }
