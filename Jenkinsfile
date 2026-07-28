@@ -11,7 +11,7 @@ pipeline{
                 checkout scm
             }
         }
-        stage('check AWS CLI'){
+        stage('AWS CLI'){
             steps{
                 bat 'aws --version'
             }
