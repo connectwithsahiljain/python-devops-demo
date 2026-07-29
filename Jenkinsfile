@@ -2,7 +2,9 @@ pipeline{
     agent any
     environment {
         IMAGE_NAME = 'connectiwthsahiljain/python-devops-demo'
-        IMAGE_TAG = 'v1'
+        IMAGE_TAG = '${}BUILD_NUMBER}'
+        INSTANCE_ID = 'i-041fa070ccc7f0804'
+        AWS?_REGION = 'us-east-1'
     }
 
     stages{
@@ -21,12 +23,12 @@ pipeline{
                 bat '"C:\\Users\\sahiljain77\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" build -t python-devops-demo:v1 .'
             }
         }
-        stage('Run Docker Container'){
-            steps{
-                bat '"C:\\Users\\sahiljain77\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" rm -f python-app || exit 0'
-                bat '"C:\\Users\\sahiljain77\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" run -d -p 5000:5000 --name python-app python-devops-demo:v1'
-            }
-        }
+        // stage('Run Docker Container'){
+        //     steps{
+        //         bat '"C:\\Users\\sahiljain77\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" rm -f python-app || exit 0'
+        //         bat '"C:\\Users\\sahiljain77\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" run -d -p 5000:5000 --name python-app python-devops-demo:v1'
+        //     }
+        // }
         stage('Docker Login'){
             steps{
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]){
@@ -42,6 +44,12 @@ pipeline{
         stage('Push Image'){
             steps{
                 bat '"C:\\Users\\sahiljain77\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe" push %IMAGE_NAME%:%IMAGE_TAG%'
+            }
+        }
+        stage('Deploy to EC2'){
+            steps{
+                bat 'aws ec2 describe-instances --instance-ids %INSTANCE_ID% --region %AWS?_REGION%'
+                bat 'aws ssm send-command --targets "Key=instanceIds,Values=%INSTANCE_ID%" --document-name "AWS-RunShellScript" --comment "Deploy Docker Image" --parameters \'commands=["docker pull %IMAGE_NAME%:%IMAGE_TAG%", "docker stop python-app || true", "docker rm python-app || true", "docker run -d -p 5000:5000 --name python-app %IMAGE_NAME%:%IMAGE_TAG%"]\' --region %AWS?_REGION%'
             }
         }
     }
