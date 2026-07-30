@@ -2,7 +2,7 @@ pipeline{
     agent any
     environment {
         IMAGE_NAME = 'connectiwthsahiljain/python-devops-demo'
-        IMAGE_TAG = '${BUILD_NUMBER}'
+        IMAGE_TAG = "${BUILD_NUMBER}"
         INSTANCE_ID = 'i-041fa070ccc7f0804'
         AWS_REGION = 'us-east-1'
     }
