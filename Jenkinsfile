@@ -2,9 +2,9 @@ pipeline{
     agent any
     environment {
         IMAGE_NAME = 'connectiwthsahiljain/python-devops-demo'
-        IMAGE_TAG = '${}BUILD_NUMBER}'
+        IMAGE_TAG = '${BUILD_NUMBER}'
         INSTANCE_ID = 'i-041fa070ccc7f0804'
-        AWS?_REGION = 'us-east-1'
+        AWS_REGION = 'us-east-1'
     }
 
     stages{
@@ -48,8 +48,8 @@ pipeline{
         }
         stage('Deploy to EC2'){
             steps{
-                bat 'aws ec2 describe-instances --instance-ids %INSTANCE_ID% --region %AWS?_REGION%'
-                bat 'aws ssm send-command --targets "Key=instanceIds,Values=%INSTANCE_ID%" --document-name "AWS-RunShellScript" --comment "Deploy Docker Image" --parameters \'commands=["docker pull %IMAGE_NAME%:%IMAGE_TAG%", "docker stop python-app || true", "docker rm python-app || true", "docker run -d -p 5000:5000 --name python-app %IMAGE_NAME%:%IMAGE_TAG%"]\' --region %AWS?_REGION%'
+                bat 'aws ec2 describe-instances --instance-ids %INSTANCE_ID% --region %AWS_REGION%'
+                bat 'aws ssm send-command --targets "Key=instanceIds,Values=%INSTANCE_ID%" --document-name "AWS-RunShellScript" --comment "Deploy Docker Image" --parameters \'commands=["docker pull %IMAGE_NAME%:%IMAGE_TAG%", "docker stop python-app || true", "docker rm python-app || true", "docker run -d -p 5000:5000 --name python-app %IMAGE_NAME%:%IMAGE_TAG%"]\' --region %AWS_REGION%'
             }
         }
     }
