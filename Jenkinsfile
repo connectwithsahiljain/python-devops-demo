@@ -54,12 +54,22 @@ pipeline{
                 ]){
                     bat 'aws ec2 describe-instances --instance-ids %INSTANCE_ID% --region %AWS_REGION%'
                     powershell """
-                        aws ssm send-command `
-                            --targets 'Key=instanceIds,Values=${env.INSTANCE_ID}' `
-                            --document-name 'AWS-RunShellScript' `
-                            --comment 'Deploy Docker Image' `
-                            --parameters 'commands=["docker pull ${env.IMAGE_NAME}:${env.IMAGE_TAG}", "docker stop python-app || true", "docker rm python-app || true", "docker run -d -p 5000:5000 --name python-app ${env.IMAGE_NAME}:${env.IMAGE_TAG}"]' `
-                            --region '${env.AWS_REGION}'
+                        \$tmpFile = Join-Path \$env:TEMP 'ssm-input-${env.BUILD_NUMBER}.json'
+                        @{
+                            Targets      = @(@{ Key = 'instanceIds'; Values = @('${env.INSTANCE_ID}') })
+                            DocumentName = 'AWS-RunShellScript'
+                            Comment      = 'Deploy Docker Image'
+                            Parameters   = @{
+                                commands = @(
+                                    'docker pull ${env.IMAGE_NAME}:${env.IMAGE_TAG}',
+                                    'docker stop python-app || true',
+                                    'docker rm python-app || true',
+                                    'docker run -d -p 5000:5000 --name python-app ${env.IMAGE_NAME}:${env.IMAGE_TAG}'
+                                )
+                            }
+                        } | ConvertTo-Json -Depth 5 | Out-File -FilePath \$tmpFile -Encoding utf8
+                        aws ssm send-command --region '${env.AWS_REGION}' --cli-input-json "file://\$tmpFile"
+                        Remove-Item \$tmpFile -ErrorAction SilentlyContinue
                     """
                 }
             }
