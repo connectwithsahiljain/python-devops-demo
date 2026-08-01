@@ -54,21 +54,25 @@ pipeline{
                 ]){
                     bat 'aws ec2 describe-instances --instance-ids %INSTANCE_ID% --region %AWS_REGION%'
                     powershell """
+                        \$image    = '${env.IMAGE_NAME}:${env.IMAGE_TAG}'
+                        \$commands = Get-Content 'deploy.sh' |
+                            Where-Object { \$_.Trim() -and \$_ -notmatch '^#' } |
+                            ForEach-Object { \$_ -replace 'DEPLOY_IMAGE', \$image }
+
                         \$tmpFile = Join-Path \$env:TEMP 'ssm-input-${env.BUILD_NUMBER}.json'
-                        @{
+                        \$json = @{
                             Targets      = @(@{ Key = 'instanceIds'; Values = @('${env.INSTANCE_ID}') })
                             DocumentName = 'AWS-RunShellScript'
                             Comment      = 'Deploy Docker Image'
-                            Parameters   = @{
-                                commands = @(
-                                    'docker pull ${env.IMAGE_NAME}:${env.IMAGE_TAG}',
-                                    'docker stop python-app || true',
-                                    'docker rm python-app || true',
-                                    'docker run -d -p 5000:5000 --name python-app ${env.IMAGE_NAME}:${env.IMAGE_TAG}'
-                                )
-                            }
-                        } | ConvertTo-Json -Depth 5 | Out-File -FilePath \$tmpFile -Encoding utf8
-                        aws ssm send-command --region '${env.AWS_REGION}' --cli-input-json "file://\$tmpFile"
+                            Parameters   = @{ commands = \$commands }
+                        } | ConvertTo-Json -Depth 5
+                        [System.IO.File]::WriteAllText(\$tmpFile, \$json)
+                        Write-Host "Temp file path: \$tmpFile"
+                        Write-Host "File exists: \$(Test-Path \$tmpFile)"
+                        Write-Host "File content:"
+                        Get-Content \$tmpFile
+                        \$fileUri = 'file://' + (\$tmpFile -replace '\\\\', '/')
+                        aws ssm send-command --region '${env.AWS_REGION}' --cli-input-json \$fileUri
                         Remove-Item \$tmpFile -ErrorAction SilentlyContinue
                     """
                 }
